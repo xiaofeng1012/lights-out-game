@@ -7,27 +7,30 @@
         body { 
             background: linear-gradient(135deg, #667eea, #764ba2);
             display: flex; flex-direction: column; align-items: center; 
-            font-family: -apple-system; color: white; margin: 0; padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif; color: white; margin: 0; padding: 20px;
             min-height: 100vh;
         }
         .grid { display: grid; grid-template-columns: repeat(5, 70px); gap: 12px; }
         .light { 
             width: 70px; height: 70px; border-radius: 50%; 
-            border: 4px solid #444; cursor: pointer; transition: all 0.2s;
-            box-shadow: 0 0 15px rgba(0,0,0,0.5);
+            border: 4px solid #444; cursor: pointer; transition: all 0.2s ease;
+            box-shadow: 0 0 15px rgba(0,0,0,0.5); touch-action: manipulation;
         }
         .light.on { 
             background: linear-gradient(45deg, #fff176, #ffeb3b, #fbc02d);
-            box-shadow: 0 0 30px #ffeb3b;
+            box-shadow: 0 0 30px #ffeb3b, inset 0 0 20px rgba(255,235,59,0.5);
         }
         button { 
             background: linear-gradient(45deg, #4CAF50, #45a049); 
             color: white; border: none; padding: 15px 25px; 
             font-size: 16px; border-radius: 30px; margin: 10px; 
-            cursor: pointer; font-weight: bold;
+            cursor: pointer; font-weight: bold; touch-action: manipulation;
+            transition: transform 0.2s;
         }
+        button:active { transform: scale(0.95); }
         button:hover { transform: scale(1.05); }
-        #status { margin-top: 20px; font-size: 18px; }
+        #status { margin-top: 20px; font-size: 18px; text-align: center; }
+        .solving { opacity: 0.7; pointer-events: none; }
     </style>
 </head>
 <body>
@@ -36,7 +39,7 @@
     <div>
         <button onclick="resetGame()">🔄 重置</button>
         <button onclick="randomGame()">🎲 隨機</button>
-        <button onclick="solveGame()">🧠 解答</button>
+        <button id="solveBtn" onclick="solveGame()">🧠 解答</button>
     </div>
     <div id="status">點擊開始遊戲！</div>
 
@@ -44,6 +47,8 @@
         let lights = Array(5).fill().map(() => Array(5).fill(0));
         const grid = document.getElementById('grid');
         const status = document.getElementById('status');
+        const solveBtn = document.getElementById('solveBtn');
+        let solving = false;
         
         function createGrid() {
             grid.innerHTML = '';
@@ -59,6 +64,7 @@
         }
         
         function toggle(x, y) {
+            if(solving) return;
             const dirs = [[-1,0],[1,0],[0,-1],[0,1],[0,0]];
             dirs.forEach(([dx, dy]) => {
                 const nx = x + dx, ny = y + dy;
@@ -67,7 +73,7 @@
                 }
             });
             updateGrid();
-            setTimeout(checkWin, 150);
+            requestAnimationFrame(checkWin);
         }
         
         function updateGrid() {
@@ -89,6 +95,8 @@
             lights = Array(5).fill().map(() => Array(5).fill(0));
             updateGrid();
             status.textContent = '遊戲已重置！';
+            solving = false;
+            solveBtn.classList.remove('solving');
         }
         
         function randomGame() {
@@ -96,22 +104,27 @@
                 Array(5).fill().map(() => Math.random() > 0.5 ? 1 : 0));
             updateGrid();
             status.textContent = '🎲 新挑戰！';
+            solving = false;
+            solveBtn.classList.remove('solving');
         }
         
-        // 燈謎解答演算法 - 高斯消元法 (模2運算)
-        function solveGame() {
-            // 建立 25x25 影響矩陣 A 和目標向量 b (需要全亮，所以 b 全為 1)
-            const N = 25;
-            let A = Array(N).fill().map(() => Array(N).fill(0));
-            let b = Array(N).fill(1); // 目標：全亮(1)
+        // iPhone Safari 優化版解答器
+        async function solveGame() {
+            if(solving) return;
+            solving = true;
+            solveBtn.classList.add('solving');
+            status.textContent = '🧠 計算解答中...';
             
-            // 填入影響矩陣：每個按鈕影響自己+四鄰居
+            // 快速建立矩陣 (非同步)
+            const N = 25;
+            const A = Array(N).fill().map(() => Array(N).fill(0));
+            const b = Array(N).fill(1);
+            
+            // 填入影響矩陣
             for(let i = 0; i < 5; i++) {
                 for(let j = 0; j < 5; j++) {
                     let idx = i * 5 + j;
-                    // 自身
                     A[idx][idx] = 1;
-                    // 上、下、左、右
                     const dirs = [[-1,0],[1,0],[0,-1],[0,1]];
                     for(let [dx, dy] of dirs) {
                         let ni = i + dx, nj = j + dy;
@@ -123,18 +136,18 @@
                 }
             }
             
-            // 將當前燈狀態加入方程 (實際需要按下的次數)
+            // 當前狀態
             for(let i = 0; i < 5; i++) {
                 for(let j = 0; j < 5; j++) {
                     let idx = i * 5 + j;
-                    b[idx] = (b[idx] + lights[i][j]) % 2; // 模2加法
+                    b[idx] = (b[idx] + lights[i][j]) % 2;
                 }
             }
             
-            // 高斯消元求解 (模2)
-            solveGaussian(A, b);
+            // 高斯消元 (分步執行避免阻塞)
+            await solveGaussian(A, b);
             
-            // 執行解答：按下需要切換的位置
+            // 找出解答
             let solution = [];
             for(let i = 0; i < 5; i++) {
                 for(let j = 0; j < 5; j++) {
@@ -143,24 +156,28 @@
                 }
             }
             
-            // 動態演示解答步驟
+            // 使用 requestAnimationFrame 動態演示 (iPhone 最佳化)
             let step = 0;
             function executeStep() {
                 if(step < solution.length) {
                     let [x, y] = solution[step];
                     toggle(x, y);
                     step++;
-                    setTimeout(executeStep, 300);
+                    requestAnimationFrame(executeStep);
                 } else {
                     status.textContent = '🧠 數學自動解答完成！';
+                    solving = false;
+                    solveBtn.classList.remove('solving');
+                    requestAnimationFrame(checkWin);
                 }
             }
-            executeStep();
+            requestAnimationFrame(executeStep);
         }
         
-        // 高斯消元法 (模2運算)
-        function solveGaussian(A, b) {
+        // 非同步高斯消元 (避免 Safari 執行緒限制)
+        async function solveGaussian(A, b) {
             const N = A.length;
+            
             // 前向消元
             for(let p = 0; p < N; p++) {
                 // 找樞紐
@@ -168,19 +185,20 @@
                 for(let i = p + 1; i < N; i++) {
                     if(A[i][p] > A[max][p]) max = i;
                 }
-                // 交換行
+                // 交換
                 [A[p], A[max]] = [A[max], A[p]];
                 [b[p], b[max]] = [b[max], b[p]];
                 
                 // 消元
                 for(let i = p + 1; i < N; i++) {
-                    let alpha = A[i][p];
-                    if(alpha) {
+                    if(A[i][p]) {
                         for(let j = p; j < N; j++) {
                             A[i][j] = (A[i][j] + A[p][j]) % 2;
                         }
                         b[i] = (b[i] + b[p]) % 2;
                     }
+                    // 讓出執行緒
+                    if(p % 5 === 0) await new Promise(r => requestAnimationFrame(r));
                 }
             }
             
@@ -189,11 +207,9 @@
                 for(let k = N - 1; k > i; k--) {
                     b[i] = (b[i] + A[i][k] * b[k]) % 2;
                 }
-                if(A[i][i]) b[i] = (b[i] * 1) % 2; // 除以對角元素 (模2就是1)
             }
         }
         
-        // 初始化遊戲
         createGrid();
     </script>
 </body>
