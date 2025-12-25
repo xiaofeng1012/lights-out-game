@@ -26,6 +26,8 @@
             font-size: 16px; border-radius: 30px; margin: 10px; 
             cursor: pointer; font-weight: bold;
         }
+        button:hover { transform: scale(1.05); }
+        #status { margin-top: 20px; font-size: 18px; }
     </style>
 </head>
 <body>
@@ -41,11 +43,12 @@
     <script>
         let lights = Array(5).fill().map(() => Array(5).fill(0));
         const grid = document.getElementById('grid');
+        const status = document.getElementById('status');
         
         function createGrid() {
             grid.innerHTML = '';
-            for(let i=0; i<5; i++) {
-                for(let j=0; j<5; j++) {
+            for(let i = 0; i < 5; i++) {
+                for(let j = 0; j < 5; j++) {
                     const div = document.createElement('div');
                     div.className = 'light';
                     div.onclick = () => toggle(i, j);
@@ -59,7 +62,7 @@
             const dirs = [[-1,0],[1,0],[0,-1],[0,1],[0,0]];
             dirs.forEach(([dx, dy]) => {
                 const nx = x + dx, ny = y + dy;
-                if(nx>=0 && nx<5 && ny>=0 && ny<5) {
+                if(nx >= 0 && nx < 5 && ny >= 0 && ny < 5) {
                     lights[nx][ny] = 1 - lights[nx][ny];
                 }
             });
@@ -69,8 +72,8 @@
         
         function updateGrid() {
             const cells = grid.children;
-            for(let i=0, idx=0; i<5; i++) {
-                for(let j=0; j<5; j++, idx++) {
+            for(let i = 0, idx = 0; i < 5; i++) {
+                for(let j = 0; j < 5; j++, idx++) {
                     cells[idx].className = `light ${lights[i][j] ? 'on' : ''}`;
                 }
             }
@@ -78,23 +81,119 @@
         
         function checkWin() {
             if(lights.every(row => row.every(v => v))) {
-                document.getElementById('status').textContent = '🎉 恭喜通關！';
+                status.textContent = '🎉 恭喜通關！';
             }
         }
         
         function resetGame() {
             lights = Array(5).fill().map(() => Array(5).fill(0));
             updateGrid();
-            document.getElementById('status').textContent = '遊戲已重置！';
+            status.textContent = '遊戲已重置！';
         }
         
         function randomGame() {
             lights = Array(5).fill().map(() => 
                 Array(5).fill().map(() => Math.random() > 0.5 ? 1 : 0));
             updateGrid();
-            document.getElementById('status').textContent = '🎲 新挑戰！';
+            status.textContent = '🎲 新挑戰！';
         }
         
+        // 燈謎解答演算法 - 高斯消元法 (模2運算)
+        function solveGame() {
+            // 建立 25x25 影響矩陣 A 和目標向量 b (需要全亮，所以 b 全為 1)
+            const N = 25;
+            let A = Array(N).fill().map(() => Array(N).fill(0));
+            let b = Array(N).fill(1); // 目標：全亮(1)
+            
+            // 填入影響矩陣：每個按鈕影響自己+四鄰居
+            for(let i = 0; i < 5; i++) {
+                for(let j = 0; j < 5; j++) {
+                    let idx = i * 5 + j;
+                    // 自身
+                    A[idx][idx] = 1;
+                    // 上、下、左、右
+                    const dirs = [[-1,0],[1,0],[0,-1],[0,1]];
+                    for(let [dx, dy] of dirs) {
+                        let ni = i + dx, nj = j + dy;
+                        if(ni >= 0 && ni < 5 && nj >= 0 && nj < 5) {
+                            let nidx = ni * 5 + nj;
+                            A[idx][nidx] = 1;
+                        }
+                    }
+                }
+            }
+            
+            // 將當前燈狀態加入方程 (實際需要按下的次數)
+            for(let i = 0; i < 5; i++) {
+                for(let j = 0; j < 5; j++) {
+                    let idx = i * 5 + j;
+                    b[idx] = (b[idx] + lights[i][j]) % 2; // 模2加法
+                }
+            }
+            
+            // 高斯消元求解 (模2)
+            solveGaussian(A, b);
+            
+            // 執行解答：按下需要切換的位置
+            let solution = [];
+            for(let i = 0; i < 5; i++) {
+                for(let j = 0; j < 5; j++) {
+                    let idx = i * 5 + j;
+                    if(b[idx]) solution.push([i, j]);
+                }
+            }
+            
+            // 動態演示解答步驟
+            let step = 0;
+            function executeStep() {
+                if(step < solution.length) {
+                    let [x, y] = solution[step];
+                    toggle(x, y);
+                    step++;
+                    setTimeout(executeStep, 300);
+                } else {
+                    status.textContent = '🧠 數學自動解答完成！';
+                }
+            }
+            executeStep();
+        }
+        
+        // 高斯消元法 (模2運算)
+        function solveGaussian(A, b) {
+            const N = A.length;
+            // 前向消元
+            for(let p = 0; p < N; p++) {
+                // 找樞紐
+                let max = p;
+                for(let i = p + 1; i < N; i++) {
+                    if(A[i][p] > A[max][p]) max = i;
+                }
+                // 交換行
+                [A[p], A[max]] = [A[max], A[p]];
+                [b[p], b[max]] = [b[max], b[p]];
+                
+                // 消元
+                for(let i = p + 1; i < N; i++) {
+                    let alpha = A[i][p];
+                    if(alpha) {
+                        for(let j = p; j < N; j++) {
+                            A[i][j] = (A[i][j] + A[p][j]) % 2;
+                        }
+                        b[i] = (b[i] + b[p]) % 2;
+                    }
+                }
+            }
+            
+            // 回代
+            for(let i = N - 1; i >= 0; i--) {
+                for(let k = N - 1; k > i; k--) {
+                    b[i] = (b[i] + A[i][k] * b[k]) % 2;
+                }
+                if(A[i][i]) b[i] = (b[i] * 1) % 2; // 除以對角元素 (模2就是1)
+            }
+        }
+        
+        // 初始化遊戲
         createGrid();
     </script>
 </body>
