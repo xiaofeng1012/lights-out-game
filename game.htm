@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>開燈遊戲</title>
+    <style>
+        body { 
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            display: flex; flex-direction: column; align-items: center; 
+            font-family: -apple-system; color: white; margin: 0; padding: 20px;
+            min-height: 100vh;
+        }
+        .grid { display: grid; grid-template-columns: repeat(5, 70px); gap: 12px; }
+        .light { 
+            width: 70px; height: 70px; border-radius: 50%; 
+            border: 4px solid #444; cursor: pointer; transition: all 0.2s;
+            box-shadow: 0 0 15px rgba(0,0,0,0.5);
+        }
+        .light.on { 
+            background: linear-gradient(45deg, #fff176, #ffeb3b, #fbc02d);
+            box-shadow: 0 0 30px #ffeb3b;
+        }
+        button { 
+            background: linear-gradient(45deg, #4CAF50, #45a049); 
+            color: white; border: none; padding: 15px 25px; 
+            font-size: 16px; border-radius: 30px; margin: 10px; 
+            cursor: pointer; font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>💡 開燈遊戲 💡</h1>
+    <div id="grid" class="grid"></div>
+    <div>
+        <button onclick="resetGame()">🔄 重置</button>
+        <button onclick="randomGame()">🎲 隨機</button>
+        <button onclick="solveGame()">🧠 解答</button>
+    </div>
+    <div id="status">點擊開始遊戲！</div>
+
+    <script>
+        let lights = Array(5).fill().map(() => Array(5).fill(0));
+        const grid = document.getElementById('grid');
+        
+        function createGrid() {
+            grid.innerHTML = '';
+            for(let i=0; i<5; i++) {
+                for(let j=0; j<5; j++) {
+                    const div = document.createElement('div');
+                    div.className = 'light';
+                    div.onclick = () => toggle(i, j);
+                    grid.appendChild(div);
+                }
+            }
+            updateGrid();
+        }
+        
+        function toggle(x, y) {
+            const dirs = [[-1,0],[1,0],[0,-1],[0,1],[0,0]];
+            dirs.forEach(([dx, dy]) => {
+                const nx = x + dx, ny = y + dy;
+                if(nx>=0 && nx<5 && ny>=0 && ny<5) {
+                    lights[nx][ny] = 1 - lights[nx][ny];
+                }
+            });
+            updateGrid();
+            setTimeout(checkWin, 150);
+        }
+        
+        function updateGrid() {
+            const cells = grid.children;
+            for(let i=0, idx=0; i<5; i++) {
+                for(let j=0; j<5; j++, idx++) {
+                    cells[idx].className = `light ${lights[i][j] ? 'on' : ''}`;
+                }
+            }
+        }
+        
+        function checkWin() {
+            if(lights.every(row => row.every(v => v))) {
+                document.getElementById('status').textContent = '🎉 恭喜通關！';
+            }
+        }
+        
+        function resetGame() {
+            lights = Array(5).fill().map(() => Array(5).fill(0));
+            updateGrid();
+            document.getElementById('status').textContent = '遊戲已重置！';
+        }
+        
+        function randomGame() {
+            lights = Array(5).fill().map(() => 
+                Array(5).fill().map(() => Math.random() > 0.5 ? 1 : 0));
+            updateGrid();
+            document.getElementById('status').textContent = '🎲 新挑戰！';
+        }
+        
+        createGrid();
+    </script>
+</body>
+</html>
