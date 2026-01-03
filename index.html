@@ -3,39 +3,411 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>現代相簿 - 響應式圖片儲存</title>
-    <link rel="stylesheet" href="style.css">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <title>ITS Python 時間格式化 第二套10題（HTML版）</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Microsoft JhengHei', 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #ff6b6b, #feca57);
+            color: white;
+            text-align: center;
+            padding: 30px;
+        }
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+        .progress {
+            font-size: 18px;
+            font-weight: bold;
+            background: rgba(255,255,255,0.2);
+            padding: 10px 20px;
+            border-radius: 25px;
+            display: inline-block;
+        }
+        .content {
+            padding: 40px;
+            min-height: 400px;
+        }
+        .question-box {
+            background: #f8f9fa;
+            border: 3px solid #e9ecef;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+        .question-box h2 {
+            color: #2c3e50;
+            font-size: 20px;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+        .options-box {
+            background: white;
+            border: 2px solid #dee2e6;
+            border-radius: 10px;
+            padding: 20px;
+        }
+        .option {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 16px;
+        }
+        .option:hover {
+            background: #e3f2fd;
+        }
+        .option.selected {
+            background: #2196f3;
+            color: white;
+            border: 2px solid #1976d2;
+        }
+        .option input[type="radio"] {
+            margin-right: 12px;
+            transform: scale(1.2);
+            accent-color: #2196f3;
+        }
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid #eee;
+        }
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            min-width: 140px;
+        }
+        .btn-primary {
+            background: #2196f3;
+            color: white;
+        }
+        .btn-primary:hover:not(:disabled) {
+            background: #1976d2;
+            transform: translateY(-2px);
+        }
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        .btn-secondary:hover:not(:disabled) {
+            background: #545b62;
+        }
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        .btn-success:hover:not(:disabled) {
+            background: #218838;
+            transform: translateY(-2px);
+        }
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .result-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+        }
+        .result-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            width: 90%;
+            max-width: 800px;
+            max-height: 80vh;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.3);
+        }
+        .result-header {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            padding: 25px;
+            text-align: center;
+        }
+        .result-score {
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .result-body {
+            padding: 25px;
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+        .result-item {
+            background: #f8f9fa;
+            border-left: 5px solid #28a745;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-radius: 0 8px 8px 0;
+        }
+        .result-item.wrong {
+            border-left-color: #dc3545;
+        }
+        .result-answer {
+            font-size: 18px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        .close-btn {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            background: none;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            color: white;
+        }
+        @media (max-width: 768px) {
+            .container { margin: 10px; }
+            .content { padding: 20px; }
+            .nav-buttons { flex-direction: column; gap: 15px; }
+            .btn { width: 100%; }
+        }
+    </style>
 </head>
 <body>
-    <header>
-        <h1><i class="fas fa-images"></i> 我的相簿</h1>
-        <p>上傳、瀏覽、下載你的照片</p>
-    </header>
-
-    <main>
-        <!-- 上傳區域 -->
-        <section class="upload-section">
-            <div class="upload-container">
-                <input type="file" id="fileInput" accept="image/*" multiple>
-                <label for="fileInput" class="upload-btn">
-                    <i class="fas fa-cloud-upload-alt"></i>
-                    <span>選擇照片上傳</span>
-                </label>
-                <div id="uploadPreview" class="upload-preview"></div>
+    <div class="container">
+        <div class="header">
+            <h1>ITS Python 時間格式化 第二套10題（進階）</h1>
+            <div class="progress" id="progress">第 1/10 題</div>
+        </div>
+        
+        <div class="content">
+            <div class="question-box">
+                <h2 id="question-text"></h2>
+                <div class="options-box">
+                    <div class="option" data-index="0"><input type="radio" name="answer" id="opt0"><label for="opt0"></label></div>
+                    <div class="option" data-index="1"><input type="radio" name="answer" id="opt1"><label for="opt1"></label></div>
+                    <div class="option" data-index="2"><input type="radio" name="answer" id="opt2"><label for="opt2"></label></div>
+                    <div class="option" data-index="3"><input type="radio" name="answer" id="opt3"><label for="opt3"></label></div>
+                </div>
             </div>
-        </section>
+        </div>
+        
+        <div class="nav-buttons">
+            <button class="btn btn-secondary" id="prevBtn">← 上一題</button>
+            <button class="btn btn-primary" id="nextBtn">下一題 →</button>
+            <button class="btn btn-success" id="submitBtn" disabled>送出測驗（顯示答案）</button>
+        </div>
+    </div>
 
-        <!-- 相簿網格 -->
-        <section class="gallery-section">
-            <div class="gallery-header">
-                <h2>相簿內容</h2>
-                <button id="clearAll" class="clear-btn"><i class="fas fa-trash"></i> 清空全部</button>
+    <!-- 結果對話框 -->
+    <div class="result-modal" id="resultModal">
+        <div class="result-content">
+            <button class="close-btn" id="closeResult">&times;</button>
+            <div class="result-header">
+                <div class="result-score" id="resultScore"></div>
+                <div id="resultSummary"></div>
             </div>
-            <div id="gallery" class="gallery-grid"></div>
-        </section>
-    </main>
+            <div class="result-body" id="resultBody"></div>
+        </div>
+    </div>
 
-    <script src="script.js"></script>
+    <script>
+        const questions = [
+            {"q": "1. datetime.now() 與 datetime.datetime.now() 有何不同？", 
+             "options": ["A. 前者較快", "B. 無差別", "C. 前者不存在", "D. 後者較快"], 
+             "ans": 2, "explain": "C. datetime.now()不存在，必須datetime.datetime.now()"},
+            
+            {"q": "2. d.strftime('%a') 與 '%A' 差別？", 
+             "options": ["A. %a=全名，%A=縮寫", "B. %a=縮寫，%A=全名", "C. 相同", "D. %a無效"], 
+             "ans": 1, "explain": "B. %a=Sat, %A=Saturday"},
+            
+            {"q": "3. '%j' 格式代碼代表？", 
+             "options": ["A. 星期", "B. 一年第幾天(001-366)", "C. 月份", "D. 小時"], 
+             "ans": 1, "explain": "B. %j=年積日，1月3日=003"},
+            
+            {"q": "4. d.strftime('%w') 對 Sunday 回傳？", 
+             "options": ["A. 0", "B. 1", "C. 6", "D. 7"], 
+             "ans": 0, "explain": "A. %w: Sun=0, Mon=1, Sat=6"},
+            
+            {"q": "5. 12小時制格式用哪個？", 
+             "options": ["A. %H", "B. %I + %p", "C. %h", "D. %T"], 
+             "ans": 1, "explain": "B. %I=01-12, %p=AM/PM"},
+            
+            {"q": "6. timedelta(days=1) 加到 datetime 用？", 
+             "options": ["A. d + timedelta", "B. d.add(timedelta)", "C. d.plus(timedelta)", "D. timedelta(d)"], 
+             "ans": 0, "explain": "A. d + timedelta(days=1) 運算子重載"},
+            
+            {"q": "7. strptime('2026-01-03', fmt) 的 fmt？", 
+             "options": ["A. '%Y-%m-%d'", "B. '%y-%m-%d'", "C. '%Y/%m/%d'", "D. '%d-%m-%Y'"], 
+             "ans": 0, "explain": "A. 解析字串必須完全匹配"},
+            
+            {"q": "8. date.today() 與 datetime.now().date() 差別？", 
+             "options": ["A. 前者較快", "B. 無差別", "C. 後者有時間", "D. 前者不存在"], 
+             "ans": 1, "explain": "B. 兩者都只給日期，功能相同"},
+            
+            {"q": "9. '%f' 格式代碼是？", 
+             "options": ["A. 星期縮寫", "B. 微秒(000000-999999)", "C. 分鐘", "D. AM/PM"], 
+             "ans": 1, "explain": "B. %f=微秒，適合高精度時間"},
+            
+            {"q": "10. d.replace(year=2025) 作用？", 
+             "options": ["A. 修改原物件", "B. 傳回新物件(年改2025)", "C. 錯誤", "D. 只改副本"], 
+             "ans": 1, "explain": "B. datetime不可變，replace()傳回新物件"}
+        ];
+
+        let currentQuestion = 0;
+        let answers = new Array(10).fill(-1);
+
+        const elements = {
+            questionText: document.getElementById('question-text'),
+            progress: document.getElementById('progress'),
+            options: document.querySelectorAll('.option'),
+            prevBtn: document.getElementById('prevBtn'),
+            nextBtn: document.getElementById('nextBtn'),
+            submitBtn: document.getElementById('submitBtn'),
+            resultModal: document.getElementById('resultModal'),
+            resultScore: document.getElementById('resultScore'),
+            resultSummary: document.getElementById('resultSummary'),
+            resultBody: document.getElementById('resultBody'),
+            closeResult: document.getElementById('closeResult')
+        };
+
+        function showQuestion(index) {
+            currentQuestion = index;
+            const q = questions[index];
+            
+            elements.progress.textContent = `第 ${index + 1}/10 題`;
+            elements.questionText.textContent = q.q;
+            
+            elements.options.forEach((opt, i) => {
+                opt.querySelector('label').textContent = q.options[i];
+                opt.classList.remove('selected');
+                opt.querySelector('input').checked = false;
+            });
+            
+            if (answers[index] !== -1) {
+                elements.options[answers[index]].classList.add('selected');
+                elements.options[answers[index]].querySelector('input').checked = true;
+            }
+            
+            updateButtons();
+        }
+
+        function updateButtons() {
+            elements.prevBtn.disabled = currentQuestion === 0;
+            elements.nextBtn.disabled = answers[currentQuestion] === -1 && currentQuestion < 9;
+            elements.submitBtn.disabled = !(currentQuestion === 9 && answers[currentQuestion] !== -1);
+        }
+
+        function selectOption(index) {
+            answers[currentQuestion] = index;
+            elements.options.forEach(opt => opt.classList.remove('selected'));
+            elements.options[index].classList.add('selected');
+            updateButtons();
+        }
+
+        function nextQuestion() {
+            if (currentQuestion < 9) {
+                showQuestion(currentQuestion + 1);
+            }
+        }
+
+        function prevQuestion() {
+            if (currentQuestion > 0) {
+                showQuestion(currentQuestion - 1);
+            }
+        }
+
+        function submitQuiz() {
+            let correct = 0;
+            let answersText = "第二套正確答案與詳細解析：\n\n";
+            
+            for (let i = 0; i < 10; i++) {
+                const q = questions[i];
+                const ansIdx = q.ans;
+                const ansChar = String.fromCharCode(65 + ansIdx);
+                const userChar = answers[i] !== -1 ? String.fromCharCode(65 + answers[i]) : "未答";
+                const isCorrect = answers[i] === ansIdx;
+                
+                if (isCorrect) correct++;
+                
+                const status = isCorrect ? "✅ 正確" : "❌ 錯誤";
+                answersText += `第${i+1}題 ${status}\n`;
+                answersText += `  你選：${userChar}　正確：${ansChar}\n`;
+                answersText += `  解析：${q.explain}\n\n`;
+            }
+            
+            const score = correct * 10;
+            
+            elements.resultScore.textContent = `${score}/100 分 (${correct}/10 正確)`;
+            elements.resultSummary.textContent = `答對 ${correct}/10 題`;
+            
+            // 建立結果內容
+            elements.resultBody.innerHTML = answersText
+                .split('\n')
+                .filter(line => line.trim())
+                .map(line => `<div style="margin-bottom: 8px; white-space: pre-wrap;">${line}</div>`)
+                .join('');
+            
+            elements.resultModal.style.display = 'block';
+        }
+
+        // 事件綁定
+        elements.options.forEach((opt, index) => {
+            opt.addEventListener('click', () => selectOption(index));
+            opt.querySelector('input').addEventListener('change', () => selectOption(index));
+        });
+
+        elements.prevBtn.addEventListener('click', prevQuestion);
+        elements.nextBtn.addEventListener('click', nextQuestion);
+        elements.submitBtn.addEventListener('click', submitQuiz);
+
+        elements.closeResult.addEventListener('click', () => {
+            elements.resultModal.style.display = 'none';
+        });
+
+        elements.resultModal.addEventListener('click', (e) => {
+            if (e.target === elements.resultModal) {
+                elements.resultModal.style.display = 'none';
+            }
+        });
+
+        // 初始化
+        showQuestion(0);
+    </script>
 </body>
 </html>
